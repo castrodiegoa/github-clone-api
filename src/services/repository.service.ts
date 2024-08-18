@@ -1,4 +1,4 @@
-import { deleteObject, listAll, ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
+import { deleteObject, listAll, ref, uploadBytesResumable, getDownloadURL, StorageReference } from "firebase/storage";
 import { Repository } from "../interfaces/repository.interface";
 import { apiResponse } from "../interfaces/apiResponse.interface";
 import { storage } from "../firebase";
@@ -14,33 +14,61 @@ export const getRepositories = async (userId: string): Promise<apiResponse> => {
   // Sanitizar el userId
   const sanitizedUserId = userId.replace(/[^a-zA-Z0-9_-]/g, "");
 
-  console.log(sanitizedUserId);
-
   const repoRef = ref(storage, `users/${sanitizedUserId}/repositories`);
 
-  try {
-    const repoList = await listAll(repoRef);
-    const imageUrls: string[] = [];
-
-    // Iterar sobre los prefijos
-    for (const prefix of repoList.prefixes) {
-      const prefixList = await listAll(prefix);
-      for (const item of prefixList.items) {
-        const url = await getDownloadURL(item);
-        imageUrls.push(url);
-      }
-    }
-
-    // Iterar sobre los items
-    for (const item of repoList.items) {
+  // Función para obtener la URL ejecutable
+  const getExecutableUrl = async (item: StorageReference) => {
+    try {
       const url = await getDownloadURL(item);
-      imageUrls.push(url);
+      return url;
+    } catch (error) {
+      console.error(`Error getting URL for ${item.fullPath}:`, error);
+      return null;
     }
+  };
+
+  // Función para obtener la estructura de carpetas y archivos
+  const getFolderStructure = async (folderRef: StorageReference) => {
+    const folderData: any = { files: [], folders: [] };
+
+    try {
+      // Listar subcarpetas y archivos
+      const listResult = await listAll(folderRef);
+
+      // Procesar subcarpetas
+      for (const prefix of listResult.prefixes) {
+        const folder = await getFolderStructure(prefix);
+        folderData.folders.push({
+          name: prefix.name,
+          ...folder,
+        });
+      }
+
+      // Procesar archivos
+      for (const item of listResult.items) {
+        const url = await getExecutableUrl(item);
+        if (url) {
+          folderData.files.push({
+            name: item.name,
+            url,
+          });
+        }
+      }
+
+    } catch (error) {
+      console.error(`Error listing items in ${folderRef.fullPath}:`, error);
+    }
+
+    return folderData;
+  };
+
+  try {
+    const repoData = await getFolderStructure(repoRef);
 
     return {
       success: true,
-      message: "Repositories and images retrieved successfully.",
-      data: imageUrls,
+      message: "Repositories and files retrieved successfully.",
+      data: repoData,
     };
   } catch (error: any) {
     return {
