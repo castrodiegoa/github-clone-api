@@ -1,10 +1,10 @@
 import { Request, Response } from "express";
-import { registerService, loginService } from "../services/auth.service";
+import { register, login } from "../services/auth.service";
 
-const registerController = async (req: Request, res: Response) => {
+ export const registerController = async (req: Request, res: Response) => {
     try {
         const user = req.body;
-        const response = await registerService(user);
+        const response = await register(user);
         res.status(201).json(response);
     } catch (error) {
         res.status(400).json({
@@ -14,10 +14,10 @@ const registerController = async (req: Request, res: Response) => {
     }
 };
 
-const loginController = async (req: Request, res: Response) => {
+export const loginController = async (req: Request, res: Response) => {
     try {
         const user = req.body;
-        const response = await loginService(user);
+        const response = await login(user);
         res.status(201).json(response);
     } catch (error) {
         res.status(400).json({
@@ -26,5 +26,3 @@ const loginController = async (req: Request, res: Response) => {
         });
     }
 };
-
-export { registerController, loginController };

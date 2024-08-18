@@ -1,10 +1,10 @@
-import { User } from "../models/user.model"; // Hacer archivo de barril
-import { apiResponse } from "../models/apiResponse";
+import { User } from "../interfaces/user.interface"; // Hacer archivo de barril
+import { apiResponse } from "../interfaces/apiResponse.interface";
 import { auth } from "../firebase";
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth";
 
 
-const registerService = async (data: User): Promise<apiResponse> => {
+export const register = async (data: User): Promise<apiResponse> => {
     const { email, password } = data;
 
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
@@ -20,7 +20,7 @@ const registerService = async (data: User): Promise<apiResponse> => {
     };
 };
 
-const loginService = async (data: User) => {
+export const login = async (data: User) => {
     const { email, password } = data;
 
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
@@ -32,9 +32,6 @@ const loginService = async (data: User) => {
         data: {
             id: loginUser.uid,
             email: loginUser.email!,
-
         }
     };
 };
-
-export { registerService, loginService };

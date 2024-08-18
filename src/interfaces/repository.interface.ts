@@ -1,6 +1,6 @@
 export interface Repository {
-    id: string;
+    id?: string;
     name: string;
-    description?: string;
+    files: FileList;
     userId: string;
 }
