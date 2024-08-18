@@ -65,6 +65,14 @@ export const getRepositories = async (userId: string): Promise<apiResponse> => {
   try {
     const repoData = await getFolderStructure(repoRef);
 
+    // Verificar si el objeto `data` tiene `files` y `folders` vacíos
+    if (repoData.files.length === 0 && repoData.folders.length === 0) {
+      return {
+        success: true,
+        message: "No repositories found.",
+      };
+    }
+
     return {
       success: true,
       message: "Repositories and files retrieved successfully.",
@@ -80,6 +88,25 @@ export const getRepositories = async (userId: string): Promise<apiResponse> => {
 
 export const postRepository = async (data: Repository, files: Express.Multer.File[]): Promise<apiResponse> => {
   const { name, userId } = data;
+
+  // Verificar si el cliente envió un userId
+  if (!userId) {
+    return {
+      success: false,
+      message: "No userId provided.",
+    };
+  }
+
+  // Expresión regular para verificar palabras con acentos
+  const accentRegex = /[áéíóúÁÉÍÓÚñÑ]/;
+
+  // Verificar si el nombre del repositorio contiene palabras con acentos
+  if (accentRegex.test(name)) {
+    return {
+      success: false,
+      message: "Repository name contains accented characters, which are not allowed.",
+    };
+  }
 
   // Verificar si el repositorio con el mismo nombre ya existe
   const userFolderRef = ref(storage, `users/${userId}/repositories`);
@@ -102,12 +129,16 @@ export const postRepository = async (data: Repository, files: Express.Multer.Fil
     };
   }
 
-  // Verificar si el cliente envió un userId
-  if (!userId) {
-    return {
-      success: false,
-      message: "No userId provided.",
-    };
+
+
+  // Verificar si los nombres de los archivos contienen palabras con acentos
+  for (const file of files) {
+    if (accentRegex.test(file.originalname)) {
+      return {
+        success: false,
+        message: `File name "${file.originalname}" contains accented characters, which are not allowed.`,
+      };
+    }
   }
 
   const uploadPromises = files.map((file) => {
@@ -132,6 +163,25 @@ export const postRepository = async (data: Repository, files: Express.Multer.Fil
 export const putRepository = async (data: Repository, files: Express.Multer.File[]): Promise<apiResponse> => {
   const { name, userId } = data;
 
+  // Verificar si el cliente envió un userId
+  if (!userId) {
+    return {
+      success: false,
+      message: "No userId provided.",
+    };
+  }
+
+  // Expresión regular para verificar palabras con acentos
+  const accentRegex = /[áéíóúÁÉÍÓÚñÑ]/;
+
+  // Verificar si el nombre del repositorio contiene palabras con acentos
+  if (accentRegex.test(name)) {
+    return {
+      success: false,
+      message: "Repository name contains accented characters, which are not allowed.",
+    };
+  }
+
   // Verificar si el repositorio si exista
   const userFolderRef = ref(storage, `users/${userId}/repositories`);
   const { prefixes } = await listAll(userFolderRef);
@@ -153,12 +203,14 @@ export const putRepository = async (data: Repository, files: Express.Multer.File
     };
   }
 
-  // Verificar si el cliente envió un userId
-  if (!userId) {
-    return {
-      success: false,
-      message: "No userId provided.",
-    };
+  // Verificar si los nombres de los archivos contienen palabras con acentos
+  for (const file of files) {
+    if (accentRegex.test(file.originalname)) {
+      return {
+        success: false,
+        message: `File name "${file.originalname}" contains accented characters, which are not allowed.`,
+      };
+    }
   }
 
   const uploadPromises = files.map((file) => {
