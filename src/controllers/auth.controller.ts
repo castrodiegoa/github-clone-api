@@ -18,7 +18,7 @@ export const loginController = async (req: Request, res: Response) => {
     try {
         const user = req.body;
         const response = await login(user);
-        res.status(201).json(response);
+        res.status(200).json(response);
     } catch (error) {
         res.status(400).json({
             success: false,

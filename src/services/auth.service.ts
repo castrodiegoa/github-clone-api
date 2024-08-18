@@ -1,6 +1,6 @@
 import { User } from "../interfaces/user.interface"; // Hacer archivo de barril
 import { apiResponse } from "../interfaces/apiResponse.interface";
-import { auth } from "../firebase";
+import { auth } from "../config/firebase";
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth";
 
 

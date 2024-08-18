@@ -1,9 +1,19 @@
-import { deleteObject, listAll, ref, uploadBytesResumable, getDownloadURL, StorageReference } from "firebase/storage";
+import {
+  deleteObject,
+  listAll,
+  ref,
+  uploadBytesResumable,
+  getDownloadURL,
+  StorageReference
+} from "firebase/storage";
 import { Repository } from "../interfaces/repository.interface";
 import { apiResponse } from "../interfaces/apiResponse.interface";
-import { storage } from "../firebase";
+import { storage } from "../config/firebase";
+
 
 export const getRepositories = async (userId: string): Promise<apiResponse> => {
+
+  // Verificar si el cliente envió un userId
   if (!userId) {
     return {
       success: false,
@@ -86,6 +96,9 @@ export const getRepositories = async (userId: string): Promise<apiResponse> => {
   }
 };
 
+/*
+
+*/
 export const postRepository = async (data: Repository, files: Express.Multer.File[]): Promise<apiResponse> => {
   const { name, userId } = data;
 
@@ -129,8 +142,6 @@ export const postRepository = async (data: Repository, files: Express.Multer.Fil
     };
   }
 
-
-
   // Verificar si los nombres de los archivos contienen palabras con acentos
   for (const file of files) {
     if (accentRegex.test(file.originalname)) {
@@ -159,6 +170,7 @@ export const postRepository = async (data: Repository, files: Express.Multer.Fil
     },
   };
 };
+
 
 export const putRepository = async (data: Repository, files: Express.Multer.File[]): Promise<apiResponse> => {
   const { name, userId } = data;
@@ -232,21 +244,9 @@ export const putRepository = async (data: Repository, files: Express.Multer.File
   };
 };
 
+
 export const deleteRepository = async (data: Repository): Promise<apiResponse> => {
   const { name, userId } = data;
-
-  // Verificar si el repositorio si exista
-  const userFolderRef = ref(storage, `users/${userId}/repositories`);
-  const { prefixes } = await listAll(userFolderRef);
-
-  const repositoryExists = prefixes.some((prefix) => prefix.name === name);
-
-  if (!repositoryExists) {
-    return {
-      success: false,
-      message: "Repository with this name no exists.",
-    };
-  }
 
   // Verificar si el cliente envió un userId
   if (!userId) {
@@ -256,18 +256,50 @@ export const deleteRepository = async (data: Repository): Promise<apiResponse> =
     };
   }
 
+  // Verificar si el repositorio existe
+  const userFolderRef = ref(storage, `users/${userId}/repositories`);
+  const { prefixes } = await listAll(userFolderRef);
+
+  const repositoryExists = prefixes.some((prefix) => prefix.name === name);
+
+  if (!repositoryExists) {
+    return {
+      success: false,
+      message: "Repository with this name does not exist.",
+    };
+  }
+
   // Referencia al repositorio
   const repoRef = ref(storage, `users/${userId}/repositories/${name}`);
 
-  // Listar todos los archivos y carpetas dentro del repositorio
-  const listResult = await listAll(repoRef);
+  // Función recursiva para eliminar archivos y carpetas
+  const deleteAllFilesAndFolders = async (folderRef: StorageReference) => {
+    // Listar todos los archivos y carpetas dentro de la carpeta actual
+    const listResult = await listAll(folderRef);
 
-  // Eliminar todos los archivos
-  const deleteFilePromises = listResult.items.map((item) => deleteObject(item));
-  await Promise.all(deleteFilePromises);
+    // Eliminar todos los archivos
+    const deleteFilePromises = listResult.items.map((item) => deleteObject(item));
+    await Promise.all(deleteFilePromises);
 
-  return {
-    success: true,
-    message: "Repository deleted successfully.",
+    // Eliminar carpetas recursivamente
+    const deleteFolderPromises = listResult.prefixes.map((prefix) => deleteAllFilesAndFolders(prefix));
+    await Promise.all(deleteFolderPromises);
   };
+
+  try {
+    // Llamar a la función para eliminar el repositorio completo
+    await deleteAllFilesAndFolders(repoRef);
+
+    // Confirmar que la carpeta se ha eliminado (esto es implícito al eliminar todo su contenido)
+
+    return {
+      success: true,
+      message: "Repository and its contents deleted successfully.",
+    };
+  } catch (error: any) {
+    return {
+      success: false,
+      message: `Error deleting repository: ${error.message}`,
+    };
+  }
 };
