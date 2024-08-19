@@ -1,18 +1,9 @@
-import {
-  deleteObject,
-  listAll,
-  ref,
-  uploadBytesResumable,
-  getDownloadURL,
-  StorageReference
-} from "firebase/storage";
+import { deleteObject, listAll, ref, uploadBytesResumable, getDownloadURL, StorageReference } from "firebase/storage";
 import { Repository } from "../interfaces/repository.interface";
 import { apiResponse } from "../interfaces/apiResponse.interface";
 import { storage } from "../config/firebase";
 
-
 export const getRepositories = async (userId: string): Promise<apiResponse> => {
-
   // Verificar si el cliente envió un userId
   if (!userId) {
     return {
@@ -64,7 +55,6 @@ export const getRepositories = async (userId: string): Promise<apiResponse> => {
           });
         }
       }
-
     } catch (error) {
       console.error(`Error listing items in ${folderRef.fullPath}:`, error);
     }
@@ -99,8 +89,8 @@ export const getRepositories = async (userId: string): Promise<apiResponse> => {
 /*
 
 */
-export const postRepository = async (data: Repository, files: Express.Multer.File[]): Promise<apiResponse> => {
-  const { name, userId } = data;
+export const postRepository = async (data: any, files: Express.Multer.File[]): Promise<apiResponse> => {
+  const { name, userId } = data.data;
 
   // Verificar si el cliente envió un userId
   if (!userId) {
@@ -170,7 +160,6 @@ export const postRepository = async (data: Repository, files: Express.Multer.Fil
     },
   };
 };
-
 
 export const putRepository = async (data: Repository, files: Express.Multer.File[]): Promise<apiResponse> => {
   const { name, userId } = data;
@@ -244,9 +233,9 @@ export const putRepository = async (data: Repository, files: Express.Multer.File
   };
 };
 
-
-export const deleteRepository = async (data: Repository): Promise<apiResponse> => {
-  const { name, userId } = data;
+export const deleteRepository = async (data: any): Promise<apiResponse> => {
+  const { name, userId } = data.data;
+  console.log(name, userId);
 
   // Verificar si el cliente envió un userId
   if (!userId) {

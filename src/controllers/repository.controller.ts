@@ -3,7 +3,7 @@ import { deleteRepository, getRepositories, postRepository, putRepository } from
 
 export const postRepositoryController = async (req: Request, res: Response) => {
   try {
-    const repository = req.body;
+    const repository = JSON.parse(req.body.data);
     const files = req.files as Express.Multer.File[];
 
     const response = await postRepository(repository, files);
@@ -20,6 +20,7 @@ export const getRepositoriesController = async (req: Request, res: Response) => 
   try {
     const userId = req.params.userId;
     const response = await getRepositories(userId);
+    console.log(response);
     res.status(200).json(response);
   } catch (error) {
     res.status(500).json({
